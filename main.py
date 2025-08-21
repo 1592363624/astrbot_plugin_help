@@ -2,35 +2,36 @@ import collections
 from typing import Dict, List, Optional
 
 
-from astrbot.api.event import filter, AstrMessageEvent, MessageEventResult
+from astrbot.api.event import filter, AstrMessageEvent
 from astrbot.api.star import Context, Star, register
 from astrbot.api import logger
+from astrbot.core.config.astrbot_config import AstrBotConfig
+from astrbot.core.message.components import Image
 from astrbot.core.star.filter.command import CommandFilter
 from astrbot.core.star.filter.command_group import CommandGroupFilter
 from astrbot.core.star.star_handler import star_handlers_registry, StarHandlerMetadata
 
-from .draw import draw_help_image
+from .draw import AstrBotHelpDrawer
 
-@register("helloworld", "YourName", "一个简单的 Hello World 插件", "1.0.0")
+
+@register(
+    "astrbot_plugin_help", "tinker", "查看所有命令，包括插件，返回一张帮助图片", "1.1.3"
+)
 class MyPlugin(Star):
-    def __init__(self, context: Context):
+    def __init__(self, context: Context, config: AstrBotConfig):
         super().__init__(context)
+        self.config = config
+        self.drawer = AstrBotHelpDrawer(config)
 
-    async def initialize(self):
-        """可选择实现异步的插件初始化方法，当实例化该插件类之后会自动调用该方法。"""
-
-    async def terminate(self):
-        """可选择实现异步的插件销毁方法，当插件被卸载/停用时会调用。"""
-
-    @filter.command("helps", alias={"帮助", "使用方法"})
-    async def get_help(self, event: AstrMessageEvent) -> MessageEventResult:
+    @filter.command("helps", alias={"帮助", "菜单", "功能"})
+    async def get_help(self, event: AstrMessageEvent):
         """获取插件帮助信息"""
         help_msg = self.get_all_commands()
         if not help_msg:
             yield event.plain_result("没有找到任何插件或命令")
             return
-        draw_help_image(help_msg)
-        yield event.image_result("astrbot_cmds_help.png")
+        image = self.drawer.draw_help_image(help_msg)
+        yield event.chain_result([Image.fromBytes(image)])
 
     def get_all_commands(self) -> Dict[str, List[str]]:
         """获取所有其他插件及其命令列表, 格式为 {plugin_name: [command#desc]}"""
@@ -50,14 +51,24 @@ class MyPlugin(Star):
             plugin_name = getattr(star, "name", "未知插件")
             plugin_instance = getattr(star, "star_cls", None)
             module_path = getattr(star, "module_path", None)  # 获取模块路径以供匹配
-            if plugin_name == "astrbot" or plugin_name == "astrbot_plugin_help" or plugin_name == "astrbot-reminder":
+            if (
+                plugin_name == "astrbot"
+                or plugin_name == "astrbot_plugin_help"
+                or plugin_name == "astrbot-reminder"
+            ):
                 # 跳过自身和核心插件
                 continue
             # 进行必要的检查
-            if not plugin_name or not module_path or not isinstance(plugin_instance, Star):
+            if (
+                not plugin_name
+                or not module_path
+                or not isinstance(plugin_instance, Star)
+            ):
                 # 如果实例无效或名称/路径缺失，记录警告并跳过
                 # 注意：这里检查了 module_path 是否存在，因为后面需要用它来匹配 handler
-                logger.warning(f"插件 '{plugin_name}' (模块: {module_path}) 的元数据无效或不完整，已跳过。")
+                logger.warning(
+                    f"插件 '{plugin_name}' (模块: {module_path}) 的元数据无效或不完整，已跳过。"
+                )
                 continue
             # 检查插件实例是否是当前插件的实例 (排除自身)
             if plugin_instance is self:
@@ -95,8 +106,3 @@ class MyPlugin(Star):
                     if formatted_command not in plugin_commands[plugin_name]:
                         plugin_commands[plugin_name].append(formatted_command)
         return dict(plugin_commands)
-    """
-    {
-        "plugin_name": ["/order1#desc","/order2#desc"],
-    }
-    """
