@@ -3,7 +3,7 @@
 
 ![:astrbot_plugin_help](https://count.getloli.com/@:astrbot_plugin_help?theme=minecraft)
 
-# astrbot_plugin_afdian
+# astrbot_plugin_help
 
 _✨ [astrbot](https://github.com/AstrBotDevs/AstrBot) 帮助插件 ✨_  
 
