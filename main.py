@@ -1,16 +1,14 @@
 import collections
 from typing import Dict, List, Optional
 
-
+from astrbot.api import logger
 from astrbot.api.event import filter, AstrMessageEvent
 from astrbot.api.star import Context, Star, register
-from astrbot.api import logger
 from astrbot.core.config.astrbot_config import AstrBotConfig
 from astrbot.core.message.components import Image
 from astrbot.core.star.filter.command import CommandFilter
 from astrbot.core.star.filter.command_group import CommandGroupFilter
 from astrbot.core.star.star_handler import star_handlers_registry, StarHandlerMetadata
-
 from .draw import AstrBotHelpDrawer
 
 
@@ -26,6 +24,11 @@ class MyPlugin(Star):
     @filter.command("helps", alias={"帮助", "菜单", "功能"})
     async def get_help(self, event: AstrMessageEvent):
         """获取插件帮助信息"""
+        raw = getattr(event.message_obj, "raw_message", None)
+        #  仅白名单成员可以使用该命令,如果白名单为空则全部放行
+        whitelist = getattr(self.config, "whitelist", [])
+        if whitelist and raw.get("user_id", None) not in whitelist:
+            return
         help_msg = self.get_all_commands()
         if not help_msg:
             yield event.plain_result("没有找到任何插件或命令")
