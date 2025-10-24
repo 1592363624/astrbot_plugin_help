@@ -25,10 +25,17 @@ class MyPlugin(Star):
     async def get_help(self, event: AstrMessageEvent):
         """获取插件帮助信息"""
         raw = getattr(event.message_obj, "raw_message", None)
-        #  仅白名单成员可以使用该命令,如果白名单为空则全部放行
-        whitelist = getattr(self.config, "whitelist", [])
-        if whitelist and raw.get("user_id", None) not in whitelist:
-            return
+        # 仅白名单成员可以使用该命令,如果白名单为空则全部放行
+        whitelist = getattr(self.config, "whitelist", []) if self.config is not None else []
+        user_id = raw.get("user_id", None)
+        if whitelist and user_id is not None:
+            # 统一转换为字符串进行比较，确保类型兼容
+            user_id_str = str(user_id)
+            whitelist_str = [str(uid) for uid in whitelist]
+            if user_id_str not in whitelist_str:
+                logger.info(f"用户 {user_id_str} 不在白名单中，无法使用命令helps")
+                return
+
         help_msg = self.get_all_commands()
         if not help_msg:
             yield event.plain_result("没有找到任何插件或命令")
