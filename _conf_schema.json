@@ -21,5 +21,11 @@
         "hint": "填写插件名称(区分大小写)，如：astrbot_plugin_help，黑名单里的插件不显示帮助",
         "type": "list",
         "default": []
+    },
+    "plugin_whitelist": {
+        "description": "插件白名单",
+        "hint": "填写插件名称(区分大小写)-触发指令，如：astrbot_plugin_xiuxian_shell-修仙帮助，白名单里的插件任何人都可以查询帮助",
+        "type": "list",
+        "default": []
     }
 }
