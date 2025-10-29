@@ -72,7 +72,7 @@ class MyPlugin(Star):
             setattr(self, handler_name, decorated_handler.__get__(self, self.__class__))
             logger.info(f"已创建白名单命令处理器: {command} -> {plugin_name}")
 
-    @filter.command("helps", alias={"帮助", "菜单", "功能"})
+    @filter.command("帮助", alias={"菜单", "功能"})
     async def get_help(self, event: AstrMessageEvent):
         """获取插件帮助信息"""
         raw = getattr(event.message_obj, "raw_message", None)
